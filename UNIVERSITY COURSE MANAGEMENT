@@ -1,0 +1,54 @@
+-- Create students table
+CREATE TABLE students (
+    student_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    enrollment_date DATE
+);
+
+-- Create courses table
+CREATE TABLE courses (
+    course_id INT PRIMARY KEY AUTO_INCREMENT,
+    course_name VARCHAR(100),
+    professor_id INT,
+    FOREIGN KEY (professor_id) REFERENCES professors(professor_id)
+);
+
+-- Create enrollments table
+CREATE TABLE enrollments (
+    enrollment_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT,
+    course_id INT,
+    grade DECIMAL(3, 2), -- assuming grades are stored as decimals (e.g., 3.50)
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+
+-- Create professors table
+CREATE TABLE professors (
+    professor_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    department VARCHAR(100)
+);
+
+SELECT c.course_id, c.course_name, COUNT(e.student_id) AS num_students_enrolled
+FROM courses c
+LEFT JOIN enrollments e ON c.course_id = e.course_id
+GROUP BY c.course_id, c.course_name;
+
+SELECT c.course_id, c.course_name, p.first_name, p.last_name
+FROM courses c
+JOIN professors p ON c.professor_id = p.professor_id
+WHERE p.department = 'Computer Science';
+
+SELECT c.course_id, c.course_name, AVG(e.grade) AS average_grade
+FROM courses c
+LEFT JOIN enrollments e ON c.course_id = e.course_id
+GROUP BY c.course_id, c.course_name;
+
+SELECT s.student_id, s.first_name, s.last_name, COUNT(e.enrollment_id) AS num_courses_enrolled
+FROM students s
+JOIN enrollments e ON s.student_id = e.student_id
+GROUP BY s.student_id, s.first_name, s.last_name
+HAVING COUNT(e.enrollment_id) > 3;
