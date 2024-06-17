@@ -1,0 +1,153 @@
+@Entity
+@Table(name = "products")
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long productId;
+
+    @Column(nullable = false)
+    private String productName;
+
+    private String sku;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    // getters and setters
+}
+@Entity
+@Table(name = "suppliers")
+public class Supplier {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long supplierId;
+
+    @Column(nullable = false)
+    private String supplierName;
+
+    private String contactPerson;
+
+    private String phoneNumber;
+
+    private String email;
+
+    // getters and setters
+}
+@Entity
+@Table(name = "warehouses")
+public class Warehouse {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long warehouseId;
+
+    @Column(nullable = false)
+    private String warehouseName;
+
+    private String location;
+
+    private Integer capacity;
+
+    // getters and setters
+}
+@Entity
+@Table(name = "stock_levels")
+public class StockLevel {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long stockId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
+
+    private Integer quantity;
+
+    // getters and setters
+}
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+}
+
+@Repository
+public interface SupplierRepository extends JpaRepository<Supplier, Long> {
+}
+
+@Repository
+public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
+}
+
+@Repository
+public interface StockLevelRepository extends JpaRepository<StockLevel, Long> {
+}
+@Service
+public class ProductService {
+    @Autowired
+    private ProductRepository productRepository;
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    public Product getProductById(Long productId) {
+        return productRepository.findById(productId)
+                                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+    }
+
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    public Product updateProduct(Long productId, Product productDetails) {
+        Product product = getProductById(productId);
+        product.setProductName(productDetails.getProductName());
+        product.setSku(productDetails.getSku());
+        product.setDescription(productDetails.getDescription());
+        product.setSupplier(productDetails.getSupplier());
+        return productRepository.save(product);
+    }
+
+    public ResponseEntity<?> deleteProduct(Long productId) {
+        Product product = getProductById(productId);
+        productRepository.delete(product);
+        return ResponseEntity.ok().build();
+    }
+}
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+    @Autowired
+    private ProductService productService;
+
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    @PostMapping
+    public Product createProduct(@Valid @RequestBody Product product) {
+        return productService.createProduct(product);
+    }
+
+    @GetMapping("/{productId}")
+    public Product getProductById(@PathVariable Long productId) {
+        return productService.getProductById(productId);
+    }
+
+    @PutMapping("/{productId}")
+    public Product updateProduct(@PathVariable Long productId, @Valid @RequestBody Product productDetails) {
+        return productService.updateProduct(productId, productDetails);
+    }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
+        return productService.deleteProduct(productId);
+    }
+}
